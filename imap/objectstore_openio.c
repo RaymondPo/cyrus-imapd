@@ -58,6 +58,8 @@ static struct oio_sds_s *sds = NULL;
 static const char *namespace = NULL;
 static const char *account = NULL;
 
+#define CYRUS_SUBTYPE ""
+
 static int openio_sds_lazy_init (void)
 {
     struct oio_error_s *err = NULL;
@@ -161,6 +163,7 @@ mailbox_openio_name (struct mailbox *mailbox, const struct index_record *record)
     if (account)
         oio_url_set (url, OIOURL_ACCOUNT, account);
     oio_url_set (url, OIOURL_USER, mboxname_to_userid(mailbox->name));
+//    oio_url_set (url, OIOURL_TYPE, CYRUS_SUBTYPE);
     oio_url_set (url, OIOURL_PATH, filename);
     return url;
 }

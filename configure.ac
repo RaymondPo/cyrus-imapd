@@ -406,7 +406,7 @@ esac
 AC_MSG_RESULT([$with_caringo])
 
 dnl OpenIO object store backend
-dnl deps: metautils gridclient oiosds curl
+dnl deps: oiosds 
 AC_MSG_CHECKING([whether to use OpenIO])
 AC_ARG_WITH(openio,
         [AS_HELP_STRING([--with-openio=yes|no], [use OpenIO ("yes" or "no")])],
@@ -418,49 +418,36 @@ case "$with_openio" in
 	;;
   yes)
 	use_openio="yes"
-	with_openio_lib=none
-	with_openio_inc=none
 	AC_DEFINE([WITH_OPENIO],[1],[Enable support for OpenIO object storage.])
 	;;
   *)
 	use_openio="yes"
-	with_openio_lib="$with_openio/lib64"
-	with_openio_inc="$with_openio/include"
 	AC_DEFINE([WITH_OPENIO],[1],[Enable support for OpenIO object storage.])
 	;;
 esac
 
 AC_ARG_WITH(openio-libdir,
-        [AS_HELP_STRING([--with-openio-libdir=DIR], [OpenIO lib files are in DIR])],
-        with_openio_lib=$withval,
-        [ test "${with_openio_lib+set}" = set || with_openio_lib=none])
+        [AS_HELP_STRING([--with-openio-lib=DIR], [OpenIO lib files are in DIR])],
+        with_openio_lib=$withval,with_openio_lib = "default")
 AC_ARG_WITH(openio-incdir,
-        [AS_HELP_STRING([--with-openio-incdir=DIR], [OpenIO include files are in DIR])],
-        with_openio_inc=$withval,
-        [ test "${with_openio_inc+set}" = set || with_openio_inc=none ])
+        [AS_HELP_STRING([--with-openio-inc=DIR], [OpenIO include files are in DIR])],
+        with_openio_inc=$withval, with_openio_inc = "default")
 
 if test "$use_openio" = "yes"; then
-	if test ! -d "$with_openio_lib"; then
-		AC_MSG_ERROR([OpenIO library directory '$with_openio_lib' does not exist.])
-	fi
-	if test ! -d "$with_openio_inc"; then
-		AC_MSG_ERROR([OpenIO include directory '$with_openio_inc' does not exist.])
-	fi
-
+	if test $with_openio_lib != "default" ; then 
+        	if test ! -d "$with_openio_lib"; then
+	        	AC_MSG_ERROR([OpenIO library directory '$with_openio_lib' does not exist.])
+        	fi
 	LDFLAGS="$LDFLAGS -L$with_openio_lib"
-	CFLAGS="$CFLAGS -I$with_openio_inc"
-	openio_headers="oio_sds.h core/oiourl.h"
-	for h in $openio_headers; do
-		AC_CHECK_HEADER($h,[],[
-			AC_MSG_ERROR([Header $h is missing.])
-		])
-	done
+	fi
+	if test "$with_openio_inc" != "default" ; then 
+		if test ! -d "$with_openio_inc"; then
+			AC_MSG_ERROR([OpenIO include directory '$with_openio_inc' does not exist.])
+		fi
+        CFLAGS="$CFLAGS -I$with_openio_inc"
+	fi
 	AC_CHECK_LIB([oiosds],[oio_error_free],[],[AC_MSG_ERROR([Library oiosds not found.])])
-	AC_CHECK_LIB([oiocore],[oio_url_empty],[],[AC_MSG_ERROR([Library oiocore not found.])])
-	AC_CHECK_LIB([curl],[curl_version],[],[AC_MSG_ERROR([Library curl not found.])])
-	AC_CHECK_LIB([json-c],[json_tokener_parse_ex],[],[AC_MSG_ERROR([Library json-c not found.])])
-
-	LDFLAGS="$LDFLAGS -L$with_openio_lib -loiosds -loiocore -lcurl -ljson-c"
+	LDFLAGS="$LDFLAGS -loiosds"
 fi
 AC_MSG_RESULT([$use_openio])
 

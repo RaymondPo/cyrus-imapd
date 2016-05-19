@@ -3747,17 +3747,13 @@ static void mailbox_record_cleanup(struct mailbox *mailbox,
 
     if (object_storage_enabled) {
 #if defined ENABLE_OBJECTSTORE
-        /* we always remove the spool file here, because we've archived it */
-        if (record->system_flags & FLAG_ARCHIVED)
-            unlink(spoolfname);
-
-        /* if the record is also deleted, we remove the objectstore copy */
-        if (record->system_flags & FLAG_UNLINKED)
+        if (record->system_flags & FLAG_UNLINKED && record->system_flags & FLAG_ARCHIVED)
+        /* we remove the objectstore copy */
             objectstore_delete(mailbox, record);
 #endif
     }
 
-    else if (record->system_flags & FLAG_UNLINKED) {
+    if (record->system_flags & FLAG_UNLINKED) {
         /* try to delete both */
 
         if (unlink(spoolfname) == 0) {
@@ -3768,7 +3764,7 @@ static void mailbox_record_cleanup(struct mailbox *mailbox,
                        record->uid, record->system_flags);
         }
 
-        if (strcmp(spoolfname, archivefname)) {
+        if (!object_storage_enabled && strcmp(spoolfname, archivefname)) {
             if (unlink(archivefname) == 0) {
                 if (config_auditlog)
                     syslog(LOG_NOTICE, "auditlog: unlinkarchive sessionid=<%s> "
@@ -3800,7 +3796,7 @@ static void mailbox_record_cleanup(struct mailbox *mailbox,
             unlink(spoolfname);
         }
 
-        else {
+        else if (!object_storage_enabled){
             unlink(archivefname);
         }
     }
